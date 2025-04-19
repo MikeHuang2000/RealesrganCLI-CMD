@@ -29,6 +29,27 @@ echo.
 echo ------------------------------------------------------
 echo.
 
+:: 用户操作选择
+:operation
+echo 请选择操作：
+echo [s] 处理并移动文件
+echo [p] 仅处理文件
+echo [m] 仅移动文件
+echo [d] 删除所有输入文件
+echo [f] 在资源管理器中打开input文件夹
+set /p "cmd=请输入命令(s/m/d/f)："
+
+if /i "%cmd%" neq "s" if /i "%cmd%" neq "m" if /i "%cmd%" neq "d" if /i "%cmd%" neq "f" if /i "%cmd%" neq "p" (
+    echo 无效命令！
+    goto operation
+)
+
+if /i "%cmd%"=="f" (
+    explorer.exe "%~dp0input"
+    echo 已打开input文件夹
+    goto operation
+)
+
 
 :: 枚举可用模型
 echo 可用模型列表：
@@ -69,18 +90,7 @@ for /l %%i in (1,1,%model_count%) do (
     )
 )
 
-:: 用户操作选择
-:operation
-echo 请选择操作：
-echo [s] 处理并移动文件
-echo [m] 仅移动文件
-echo [d] 删除所有输入文件
-set /p "cmd=请输入命令(s/m/d)："
 
-if /i "%cmd%" neq "s" if /i "%cmd%" neq "m" if /i "%cmd%" neq "d" (
-    echo 无效命令！
-    goto operation
-)
 
 :: 获取当前时间戳
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "datetime=%%a"
@@ -98,6 +108,15 @@ if /i "%cmd%"=="s" (
     )
 )
 
+if /i "%cmd%"=="p" (
+    for %%f in ("%input_dir%\*.jpg" "%input_dir%\*.jpeg" "%input_dir%\*.png" "%input_dir%\*.webp") do (
+        if exist "%%f" (
+            echo 正在处理: %%~nxf
+            "%exe_path%" -i "%%f" -o "%output_dir%\%%~nf_realesrganed%%~xf" -m "%models_dir%" -n "%selected_model%"
+        )
+    )
+)
+
 if /i "%cmd%"=="m" (
     for %%f in ("%input_dir%\*.jpg" "%input_dir%\*.jpeg" "%input_dir%\*.png" "%input_dir%\*.webp") do (
         if exist "%%f" call :move_file "%%f"
@@ -108,6 +127,7 @@ if /i "%cmd%"=="d" (
     del /q "%input_dir%\*" >nul 2>&1
     echo 已删除所有输入文件
 )
+
 
 echo 操作完成！
 pause
